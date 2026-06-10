@@ -30,11 +30,5 @@ public class ItemValidator implements Validator {
             errors.rejectValue("quantity", "max", new Object[]{9999}, null);
         }
 
-        if (Objects.nonNull(item.getPrice()) && Objects.nonNull(item.getQuantity())) {
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if (resultPrice < 10_000) {
-                errors.reject("totalPriceMin", new Object[]{10_000, resultPrice}, null);
-            }
-        }
     }
 }
