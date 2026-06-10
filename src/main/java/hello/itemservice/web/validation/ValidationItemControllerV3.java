@@ -52,6 +52,14 @@ public class ValidationItemControllerV3 {
                              BindingResult bindingResult,
                              RedirectAttributes redirectAttributes) {
 
+
+        if (Objects.nonNull(item.getPrice()) && Objects.nonNull(item.getQuantity())) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if (resultPrice < 10_000) {
+                bindingResult.reject("totalPriceMin", new Object[]{10_000, resultPrice}, null);
+            }
+        }
+
         /**
          * 검증 실패 시 다시 입력 폼으로 :
          */
