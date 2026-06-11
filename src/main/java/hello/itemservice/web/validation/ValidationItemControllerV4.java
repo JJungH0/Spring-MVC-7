@@ -4,17 +4,15 @@ import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
 import hello.itemservice.domain.item.SaveCheck;
 import hello.itemservice.domain.item.UpdateCheck;
+import hello.itemservice.web.validation.form.ItemSaveForm;
+import hello.itemservice.web.validation.form.ItemUpdateForm;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -22,10 +20,10 @@ import java.util.List;
 import java.util.Objects;
 
 @Controller
-@RequestMapping("/validation/v3/items")
+@RequestMapping("/validation/v4/items")
 @RequiredArgsConstructor
 @Slf4j
-public class ValidationItemControllerV3 {
+public class ValidationItemControllerV4 {
 
     private final ItemRepository itemRepository;
 
@@ -49,42 +47,14 @@ public class ValidationItemControllerV3 {
         return "validation/v4/addForm";
     }
 
-//    @PostMapping("/add")
-    public String addItem (@Valid @ModelAttribute Item item,
-                             BindingResult bindingResult,
-                             RedirectAttributes redirectAttributes) {
-
-
-        if (Objects.nonNull(item.getPrice()) && Objects.nonNull(item.getQuantity())) {
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if (resultPrice < 10_000) {
-                bindingResult.reject("totalPriceMin", new Object[]{10_000, resultPrice}, null);
-            }
-        }
-
-        /**
-         * 검증 실패 시 다시 입력 폼으로 :
-         */
-        if (bindingResult.hasErrors()) {
-            log.info("errors = {}", bindingResult);
-//            model.addAttribute("errors", errors);
-            return "validation/v4/addForm";
-        }
-
-        Item savedItem = itemRepository.save(item);
-        redirectAttributes.addAttribute("itemId", savedItem.getId());
-        redirectAttributes.addAttribute("status", true);
-        return "redirect:/validation/v4/items/{itemId}";
-    }
-
     @PostMapping("/add")
-    public String addItem2 (@Validated(SaveCheck.class) @ModelAttribute Item item,
+    public String addItem (@Validated @ModelAttribute("item") ItemSaveForm form,
                            BindingResult bindingResult,
                            RedirectAttributes redirectAttributes) {
 
 
-        if (Objects.nonNull(item.getPrice()) && Objects.nonNull(item.getQuantity())) {
-            int resultPrice = item.getPrice() * item.getQuantity();
+        if (Objects.nonNull(form.getPrice()) && Objects.nonNull(form.getQuantity())) {
+            int resultPrice = form.getPrice() * form.getQuantity();
             if (resultPrice < 10_000) {
                 bindingResult.reject("totalPriceMin", new Object[]{10_000, resultPrice}, null);
             }
@@ -98,6 +68,11 @@ public class ValidationItemControllerV3 {
 //            model.addAttribute("errors", errors);
             return "validation/v4/addForm";
         }
+
+        Item item = new Item();
+        item.setItemName(form.getItemName());
+        item.setPrice(form.getPrice());
+        item.setQuantity(form.getQuantity());
 
         Item savedItem = itemRepository.save(item);
         redirectAttributes.addAttribute("itemId", savedItem.getId());
@@ -113,30 +88,12 @@ public class ValidationItemControllerV3 {
         return "validation/v4/editForm";
     }
 
-//    @PostMapping("/{itemId}/edit")
-    public String edit(@PathVariable Long itemId,
-                       @Validated @ModelAttribute Item item,
-                       BindingResult bindingResult) {
-        if (Objects.nonNull(item.getPrice()) || Objects.nonNull(item.getQuantity())) {
-            int resultPrice = item.getPrice() * item.getQuantity();
-            if (resultPrice < 10_000) {
-                bindingResult.reject("totalPriceMin", new Object[]{10_000, resultPrice}, null);
-            }
-        }
-        if (bindingResult.hasErrors()) {
-            log.info("errors={}", bindingResult);
-            return "validation/v4/editForm";
-        }
-        itemRepository.update(itemId, item);
-        return "redirect:/validation/v4/items/{itemId}";
-    }
-
     @PostMapping("/{itemId}/edit")
-    public String edit2(@PathVariable Long itemId,
-                       @Validated(UpdateCheck.class) @ModelAttribute Item item,
+    public String edit(@PathVariable Long itemId,
+                       @ModelAttribute("item") ItemUpdateForm form,
                        BindingResult bindingResult) {
-        if (Objects.nonNull(item.getPrice()) || Objects.nonNull(item.getQuantity())) {
-            int resultPrice = item.getPrice() * item.getQuantity();
+        if (Objects.nonNull(form.getPrice()) && Objects.nonNull(form.getQuantity())) {
+            int resultPrice = form.getPrice() * form.getQuantity();
             if (resultPrice < 10_000) {
                 bindingResult.reject("totalPriceMin", new Object[]{10_000, resultPrice}, null);
             }
@@ -145,7 +102,13 @@ public class ValidationItemControllerV3 {
             log.info("errors={}", bindingResult);
             return "validation/v4/editForm";
         }
-        itemRepository.update(itemId, item);
+
+        Item itemParam = new Item();
+        itemParam.setItemName(form.getItemName());
+        itemParam.setPrice(form.getPrice());
+        itemParam.setQuantity(form.getQuantity());
+
+        itemRepository.update(itemId, itemParam);
         return "redirect:/validation/v4/items/{itemId}";
     }
 
